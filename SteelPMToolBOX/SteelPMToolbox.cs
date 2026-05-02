@@ -1419,25 +1419,11 @@ namespace Tekla.Technology.Akit.UserScript
             if (_scopeAll.Checked) return Helpers.GetAllAssemblies(_model);
             if (_scopeFilter.Checked && _filterCombo.SelectedItem != null)
             {
+                // Tekla open API does not expose a programmatic MatchesFilter method.
+                // Fall back to all assemblies and notify the user.
                 string filterName = _filterCombo.SelectedItem.ToString();
-                try
-                {
-                    var all = Helpers.GetAllAssemblies(_model);
-                    var matched = new List<ModelObject>();
-                    foreach (var obj in all)
-                    {
-                        if (Tekla.Structures.Model.Operations.Filter.MatchesFilter(
-                                obj, filterName))
-                            matched.Add(obj);
-                    }
-                    return matched;
-                }
-                catch (Exception ex)
-                {
-                    Trace.WriteLine("ResolveScope filter: " + ex.Message);
-                    _summary.Text = "Filter API unavailable — using all assemblies.";
-                    return Helpers.GetAllAssemblies(_model);
-                }
+                _summary.Text = "Filter scope (\"" + filterName + "\") not supported via open API — using all assemblies.";
+                return Helpers.GetAllAssemblies(_model);
             }
             return Helpers.GetAllAssemblies(_model);
         }
