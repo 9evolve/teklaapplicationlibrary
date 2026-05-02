@@ -298,7 +298,7 @@ namespace Tekla.Technology.Akit.UserScript
         private double _dx = 0, _dy = 0, _dz = 0;
         private List<ModelObject> _bound = new List<ModelObject>();
 
-        private Point _pivotPoint = null;
+        private Tekla.Structures.Geometry3d.Point _pivotPoint = null;
         private Label _pivotLabel;
 
         public MoverTab(Model model, IScript akit)
@@ -595,7 +595,7 @@ namespace Tekla.Technology.Akit.UserScript
                 {
                     Tekla.Structures.Model.UI.Picker picker =
                         new Tekla.Structures.Model.UI.Picker();
-                    Point pt = picker.PickPoint("Pick rotation pivot");
+                    Tekla.Structures.Geometry3d.Point pt = picker.PickPoint("Pick rotation pivot");
                     this.Invoke(new System.Windows.Forms.MethodInvoker(delegate()
                     {
                         _pivotPoint = pt;
