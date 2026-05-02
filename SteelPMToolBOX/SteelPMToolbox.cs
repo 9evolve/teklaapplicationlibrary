@@ -54,12 +54,7 @@ namespace Tekla.Technology.Akit.UserScript
                 {
                     _form = new MainForm(model, akit);
                     _form.FormClosed += delegate { _form = null; };
-                    _form.Show();
-                    while (_form != null && !_form.IsDisposed)
-                    {
-                        System.Windows.Forms.Application.DoEvents();
-                        System.Threading.Thread.Sleep(20);
-                    }
+                    _form.ShowDialog();
                 }
                 else
                 {
