@@ -21,7 +21,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using Tekla.Structures.Geometry3d;
+using T3D = Tekla.Structures.Geometry3d;
 using Tekla.Structures.Model;
 using Tekla.Structures.Model.Operations;
 
@@ -298,7 +298,7 @@ namespace Tekla.Technology.Akit.UserScript
         private double _dx = 0, _dy = 0, _dz = 0;
         private List<ModelObject> _bound = new List<ModelObject>();
 
-        private Tekla.Structures.Geometry3d.Point _pivotPoint = null;
+        private T3D.Point _pivotPoint = null;
         private Label _pivotLabel;
 
         public MoverTab(Model model, IScript akit)
@@ -567,7 +567,7 @@ namespace Tekla.Technology.Akit.UserScript
             {
                 // GUESS — Operation.MoveObject(ModelObject, Vector) is the
                 // documented signature but worth verifying.
-                var v = new Vector(mx, my, mz);
+                var v = new T3D.Vector(mx, my, mz);
                 int moved = 0;
                 foreach (var obj in _bound)
                 {
@@ -595,7 +595,7 @@ namespace Tekla.Technology.Akit.UserScript
                 {
                     Tekla.Structures.Model.UI.Picker picker =
                         new Tekla.Structures.Model.UI.Picker();
-                    Tekla.Structures.Geometry3d.Point pt = picker.PickPoint("Pick rotation pivot");
+                    T3D.Point pt = picker.PickPoint("Pick rotation pivot");
                     this.Invoke(new System.Windows.Forms.MethodInvoker(delegate()
                     {
                         _pivotPoint = pt;
@@ -651,33 +651,33 @@ namespace Tekla.Technology.Akit.UserScript
             // Axis X  →  plane is Y-Z  →  startX=(0,1,0), startY=(0,0,1)
             // Axis Y  →  plane is X-Z  →  startX=(1,0,0), startY=(0,0,1)
             // Axis Z  →  plane is X-Y  →  startX=(1,0,0), startY=(0,1,0)
-            Vector startX, startY, endX, endY;
+            T3D.Vector startX, startY, endX, endY;
             double c = Math.Cos(rad), s = Math.Sin(rad);
 
             if (axisName.StartsWith("X"))
             {
-                startX = new Vector(0, 1, 0);
-                startY = new Vector(0, 0, 1);
-                endX   = new Vector(0,  c, s);
-                endY   = new Vector(0, -s, c);
+                startX = new T3D.Vector(0, 1, 0);
+                startY = new T3D.Vector(0, 0, 1);
+                endX   = new T3D.Vector(0,  c, s);
+                endY   = new T3D.Vector(0, -s, c);
             }
             else if (axisName.StartsWith("Y"))
             {
-                startX = new Vector(1, 0, 0);
-                startY = new Vector(0, 0, 1);
-                endX   = new Vector( c, 0, -s);
-                endY   = new Vector( s, 0,  c);
+                startX = new T3D.Vector(1, 0, 0);
+                startY = new T3D.Vector(0, 0, 1);
+                endX   = new T3D.Vector( c, 0, -s);
+                endY   = new T3D.Vector( s, 0,  c);
             }
             else // Z (vertical) — default
             {
-                startX = new Vector(1, 0, 0);
-                startY = new Vector(0, 1, 0);
-                endX   = new Vector( c, s, 0);
-                endY   = new Vector(-s, c, 0);
+                startX = new T3D.Vector(1, 0, 0);
+                startY = new T3D.Vector(0, 1, 0);
+                endX   = new T3D.Vector( c, s, 0);
+                endY   = new T3D.Vector(-s, c, 0);
             }
 
-            CoordinateSystem startCS = new CoordinateSystem(_pivotPoint, startX, startY);
-            CoordinateSystem endCS   = new CoordinateSystem(_pivotPoint, endX,   endY);
+            T3D.CoordinateSystem startCS = new T3D.CoordinateSystem(_pivotPoint, startX, startY);
+            T3D.CoordinateSystem endCS   = new T3D.CoordinateSystem(_pivotPoint, endX,   endY);
 
             try
             {
@@ -707,7 +707,7 @@ namespace Tekla.Technology.Akit.UserScript
             }
             try
             {
-                var back = new Vector(-_dx, -_dy, -_dz);
+                var back = new T3D.Vector(-_dx, -_dy, -_dz);
                 foreach (var obj in _bound) Operation.MoveObject(obj, back);
                 _model.CommitChanges();
                 _dx = _dy = _dz = 0;
