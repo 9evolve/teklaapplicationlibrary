@@ -298,6 +298,9 @@ namespace Tekla.Technology.Akit.UserScript
         private double _dx = 0, _dy = 0, _dz = 0;
         private List<ModelObject> _bound = new List<ModelObject>();
 
+        private Point _pivotPoint = null;
+        private Label _pivotLabel;
+
         public MoverTab(Model model, IScript akit)
         {
             _model = model;
@@ -397,7 +400,7 @@ namespace Tekla.Technology.Akit.UserScript
             var rg = new GroupBox();
             rg.Text = "Rotate";
             rg.Location = new Point(276, y);
-            rg.Size = new Size(252, 168);
+            rg.Size = new Size(252, 192);
 
             var pickBtn = new Button();
             pickBtn.Text = "Pick pivot point…";
@@ -445,9 +448,16 @@ namespace Tekla.Technology.Akit.UserScript
                 qx += 40;
             }
 
+            _pivotLabel = new Label();
+            _pivotLabel.Text = "Pivot: (not picked)";
+            _pivotLabel.Location = new Point(8, 116);
+            _pivotLabel.Size = new Size(232, 18);
+            _pivotLabel.ForeColor = Color.Gray;
+            rg.Controls.Add(_pivotLabel);
+
             var rotBtn = new Button();
             rotBtn.Text = "Apply rotation";
-            rotBtn.Location = new Point(8, 116);
+            rotBtn.Location = new Point(8, 138);
             rotBtn.Size = new Size(232, 30);
             rotBtn.BackColor = Color.FromArgb(33, 150, 243);
             rotBtn.ForeColor = Color.White;
@@ -456,7 +466,7 @@ namespace Tekla.Technology.Akit.UserScript
             rg.Controls.Add(rotBtn);
 
             Controls.Add(rg);
-            y += 178;
+            y += 202;
 
             // Action toolbar
             var freeBtn = new Button();
@@ -577,24 +587,115 @@ namespace Tekla.Technology.Akit.UserScript
 
         private void OnPickPivot(object sender, EventArgs e)
         {
-            // TODO — picker integration. Tekla.Structures.Model.UI.Picker
-            // exposes PickPoint() but blocks until a pick completes, which
-            // can hang the modeless dialog. Worth testing before relying on.
-            MessageBox.Show("Pivot picker not yet implemented.\n\n" +
-                "Tekla.Structures.Model.UI.Picker.PickPoint() is the entry point — " +
-                "wire up here once you've confirmed it plays nicely with a modeless form.",
-                "TODO");
+            // PickPoint() blocks the calling thread; run it on a background thread
+            // and marshal the result back to the UI thread via Invoke.
+            System.Threading.Thread t = new System.Threading.Thread(delegate()
+            {
+                try
+                {
+                    Tekla.Structures.Model.UI.Picker picker =
+                        new Tekla.Structures.Model.UI.Picker();
+                    Point pt = picker.PickPoint("Pick rotation pivot");
+                    this.Invoke(new System.Windows.Forms.MethodInvoker(delegate()
+                    {
+                        _pivotPoint = pt;
+                        _pivotLabel.Text = "Pivot: X=" + pt.X.ToString("0.##") +
+                            "  Y=" + pt.Y.ToString("0.##") +
+                            "  Z=" + pt.Z.ToString("0.##");
+                        _pivotLabel.ForeColor = Color.FromArgb(0, 128, 0);
+                    }));
+                }
+                catch (Exception ex)
+                {
+                    this.Invoke(new System.Windows.Forms.MethodInvoker(delegate()
+                    {
+                        _pivotLabel.Text = "Pivot: pick cancelled";
+                        _pivotLabel.ForeColor = Color.Gray;
+                        Trace.WriteLine("PickPivot: " + ex.Message);
+                    }));
+                }
+            });
+            t.IsBackground = true;
+            t.Start();
         }
 
         private void OnApplyRotation(object sender, EventArgs e)
         {
-            // TODO — rotation around picked pivot/axis.
-            // The Tekla API doesn't expose a single Operation.RotateObject() —
-            // typical approach is to build a Matrix rotation and apply via
-            // Operation.MoveObject(obj, matrix) overload, OR fall back to
-            // an akit callback like acmdRotateObjects.
-            MessageBox.Show("Rotation not yet implemented — see TODO in OnApplyRotation.",
-                "TODO");
+            if (_bound.Count == 0)
+            {
+                MessageBox.Show("No bound selection. Click 'Bind selection' first.", "Rotate");
+                return;
+            }
+            if (_pivotPoint == null)
+            {
+                MessageBox.Show("No pivot point picked. Click 'Pick pivot point...' first.",
+                    "Rotate");
+                return;
+            }
+            double angle;
+            if (!double.TryParse(_angleBox.Text, out angle) || angle == 0)
+            {
+                MessageBox.Show("Enter a non-zero rotation angle.", "Rotate");
+                return;
+            }
+
+            double rad = angle * Math.PI / 180.0;
+            string axisName = _axisCombo.SelectedItem != null
+                ? _axisCombo.SelectedItem.ToString() : "Z (vertical)";
+
+            // Build startCS and endCS at the pivot point using perpendicular reference
+            // vectors in the plane of rotation. MoveObject(obj, fromCS, toCS) transforms
+            // each object from the "from" coordinate frame to the "to" coordinate frame —
+            // the same overload pattern as Operation.CopyObject (confirmed in sample macros).
+            //
+            // Axis X  →  plane is Y-Z  →  startX=(0,1,0), startY=(0,0,1)
+            // Axis Y  →  plane is X-Z  →  startX=(1,0,0), startY=(0,0,1)
+            // Axis Z  →  plane is X-Y  →  startX=(1,0,0), startY=(0,1,0)
+            Vector startX, startY, endX, endY;
+            double c = Math.Cos(rad), s = Math.Sin(rad);
+
+            if (axisName.StartsWith("X"))
+            {
+                startX = new Vector(0, 1, 0);
+                startY = new Vector(0, 0, 1);
+                endX   = new Vector(0,  c, s);
+                endY   = new Vector(0, -s, c);
+            }
+            else if (axisName.StartsWith("Y"))
+            {
+                startX = new Vector(1, 0, 0);
+                startY = new Vector(0, 0, 1);
+                endX   = new Vector( c, 0, -s);
+                endY   = new Vector( s, 0,  c);
+            }
+            else // Z (vertical) — default
+            {
+                startX = new Vector(1, 0, 0);
+                startY = new Vector(0, 1, 0);
+                endX   = new Vector( c, s, 0);
+                endY   = new Vector(-s, c, 0);
+            }
+
+            CoordinateSystem startCS = new CoordinateSystem(_pivotPoint, startX, startY);
+            CoordinateSystem endCS   = new CoordinateSystem(_pivotPoint, endX,   endY);
+
+            try
+            {
+                int moved = 0;
+                foreach (var obj in _bound)
+                {
+                    if (Operation.MoveObject(obj, startCS, endCS)) moved++;
+                }
+                _model.CommitChanges();
+                Operation.DisplayPrompt("Rotated " + moved + " object(s) " +
+                    angle.ToString("0.##") + "° around " + axisName + ".");
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine("MoveObject(CS,CS) failed: " + ex.Message +
+                    " — falling back to acmdRotateObjects");
+                _akit.Callback("acmdRotateObjects", "", "main_frame");
+            }
         }
 
         private void OnReset(object sender, EventArgs e)
@@ -1316,13 +1417,27 @@ namespace Tekla.Technology.Akit.UserScript
         {
             if (_scopeSel.Checked) return Helpers.GetSelectedObjects();
             if (_scopeAll.Checked) return Helpers.GetAllAssemblies(_model);
-            // Filter scope — TODO: use Filter.ObjectMatchesToFilter to test
-            // each assembly against the named filter. For now, fall back to
-            // all assemblies + warn.
             if (_scopeFilter.Checked && _filterCombo.SelectedItem != null)
             {
-                // TODO — replace with real filter matching
-                return Helpers.GetAllAssemblies(_model);
+                string filterName = _filterCombo.SelectedItem.ToString();
+                try
+                {
+                    var all = Helpers.GetAllAssemblies(_model);
+                    var matched = new List<ModelObject>();
+                    foreach (var obj in all)
+                    {
+                        if (Tekla.Structures.Model.Operations.Filter.MatchesFilter(
+                                obj, filterName))
+                            matched.Add(obj);
+                    }
+                    return matched;
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine("ResolveScope filter: " + ex.Message);
+                    _summary.Text = "Filter API unavailable — using all assemblies.";
+                    return Helpers.GetAllAssemblies(_model);
+                }
             }
             return Helpers.GetAllAssemblies(_model);
         }
