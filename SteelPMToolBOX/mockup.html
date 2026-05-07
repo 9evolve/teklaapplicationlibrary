@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Steel PM Toolbox — Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    font-size: 12px;
+    background: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 32px;
+    min-height: 100vh;
+  }
+
+  .window {
+    width: 580px;
+    background: #f5f5f5;
+    border: 1px solid #999;
+    box-shadow: 3px 3px 8px rgba(0,0,0,0.25);
+  }
+
+  .titlebar {
+    background: linear-gradient(to bottom, #4a7fc1, #3a6aaa);
+    color: white;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+  }
+
+  .titlebar-close {
+    background: #c0392b;
+    border: none;
+    color: white;
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+  }
+
+  /* Tab bar */
+  .tab-bar {
+    display: flex;
+    background: #dcdcdc;
+    border-bottom: 2px solid #999;
+    padding-top: 4px;
+    padding-left: 4px;
+    gap: 2px;
+  }
+
+  .tab {
+    padding: 5px 14px 4px;
+    background: #c8c8c8;
+    border: 1px solid #999;
+    border-bottom: none;
+    cursor: pointer;
+    font-size: 11px;
+    color: #333;
+    border-radius: 3px 3px 0 0;
+    position: relative;
+    bottom: -1px;
+  }
+
+  .tab.active {
+    background: #f5f5f5;
+    border-bottom: 2px solid #f5f5f5;
+    font-weight: bold;
+    color: #000;
+    z-index: 1;
+  }
+
+  .tab.future {
+    color: #888;
+    font-style: italic;
+  }
+
+  /* Tab panels */
+  .tab-panel { display: none; padding: 10px; }
+  .tab-panel.active { display: block; }
+
+  /* Controls */
+  .info-bar {
+    background: #fff8e1;
+    border: 1px solid #ccc;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: #555;
+    margin-bottom: 8px;
+  }
+
+  .group {
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    padding: 8px 10px 10px;
+    margin-bottom: 8px;
+    background: #fafafa;
+    position: relative;
+  }
+
+  .group-title {
+    position: absolute;
+    top: -8px;
+    left: 8px;
+    background: #fafafa;
+    padding: 0 4px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #444;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .row:last-child { margin-bottom: 0; }
+
+  label { color: #333; white-space: nowrap; }
+
+  input[type=text], input[type=number], select {
+    border: 1px solid #999;
+    padding: 2px 4px;
+    font-size: 11px;
+    font-family: inherit;
+    background: white;
+    height: 20px;
+  }
+
+  input[type=radio], input[type=checkbox] {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .btn {
+    border: 1px solid #888;
+    padding: 3px 12px;
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+    background: linear-gradient(to bottom, #f8f8f8, #e0e0e0);
+    border-radius: 2px;
+    height: 24px;
+  }
+
+  .btn:hover { background: linear-gradient(to bottom, #e8e8e8, #d0d0d0); }
+
+  .btn-primary {
+    background: linear-gradient(to bottom, #2196F3, #1565C0);
+    color: white;
+    border-color: #1255a0;
+    font-weight: bold;
+  }
+
+  .btn-primary:hover { background: linear-gradient(to bottom, #1e88e5, #1255a0); }
+
+  .btn-sm {
+    padding: 2px 8px;
+    height: 20px;
+    font-size: 10px;
+  }
+
+  /* Nudge grid */
+  .nudge-grid {
+    display: grid;
+    grid-template-columns: 56px 32px 32px;
+    grid-template-rows: repeat(3, 26px);
+    gap: 3px;
+    align-items: center;
+  }
+
+  .axis-label {
+    font-size: 11px;
+    font-weight: bold;
+    text-align: right;
+    padding-right: 6px;
+    color: #444;
+  }
+
+  .nudge-btn {
+    border: 1px solid #999;
+    background: linear-gradient(to bottom, #f0f0f0, #d8d8d8);
+    font-size: 12px;
+    cursor: pointer;
+    height: 24px;
+    border-radius: 2px;
+    text-align: center;
+  }
+
+  .nudge-btn:hover { background: linear-gradient(to bottom, #e0e0e0, #c8c8c8); }
+
+  /* Results table */
+  .results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    background: white;
+    border: 1px solid #ccc;
+  }
+
+  .results-table th {
+    background: #e0e0e0;
+    border: 1px solid #bbb;
+    padding: 3px 6px;
+    text-align: left;
+    font-weight: bold;
+    color: #333;
+  }
+
+  .results-table td {
+    border: 1px solid #ddd;
+    padding: 2px 6px;
+    color: #333;
+  }
+
+  .results-table tr:nth-child(even) td { background: #f9f9f9; }
+
+  .status-fail { color: #c0392b; font-weight: bold; }
+  .status-warn { color: #e67e22; font-weight: bold; }
+  .status-pass { color: #27ae60; font-weight: bold; }
+
+  /* Summary bar */
+  .summary-bar {
+    background: #e8e8e8;
+    border: 1px solid #ccc;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: #333;
+    margin-top: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .summary-counts span { margin-right: 14px; }
+  .count-fail { color: #c0392b; font-weight: bold; }
+  .count-warn { color: #e67e22; font-weight: bold; }
+  .count-pass { color: #27ae60; font-weight: bold; }
+
+  /* Pivot label */
+  .pivot-readout {
+    font-size: 11px;
+    color: #1a7a1a;
+    padding: 2px 0;
+  }
+
+  .pivot-readout.unset { color: #999; }
+
+  /* Delta readout */
+  .delta-readout {
+    font-size: 11px;
+    color: #555;
+    font-family: monospace;
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 2px 6px;
+    margin-top: 4px;
+  }
+
+  /* Future tab placeholder */
+  .placeholder {
+    padding: 24px;
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    font-size: 12px;
+    border: 2px dashed #ccc;
+    border-radius: 4px;
+    margin: 16px;
+  }
+
+  /* Status strip */
+  .statusstrip {
+    border-top: 1px solid #aaa;
+    background: #e0e0e0;
+    padding: 2px 8px;
+    font-size: 10px;
+    color: #555;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .hint { font-size: 10px; color: #888; }
+
+  hr { border: none; border-top: 1px solid #ddd; margin: 6px 0; }
+</style>
+</head>
+<body>
+
+<div class="window">
+
+  <!-- Title bar -->
+  <div class="titlebar">
+    <span>Steel Erectability Toolbox</span>
+    <button class="titlebar-close">✕</button>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <div class="tab" onclick="showTab('mover')">Move / Rotate</div>
+    <div class="tab active" onclick="showTab('bolts')">Bolt Clearance</div>
+    <div class="tab future" onclick="showTab('sequence')">Erection Sequence ⋯</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       TAB 1 — MOVE / ROTATE
+  ═══════════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-mover">
+
+    <div class="info-bar" id="mover-sel-info">▸ No bound selection — pick parts then click Bind</div>
+
+    <div style="display:flex; gap:8px;">
+
+      <!-- Nudge -->
+      <div class="group" style="flex:1;">
+        <div class="group-title">Nudge</div>
+
+        <div class="row">
+          <label>Inc (mm):</label>
+          <input type="number" value="5" style="width:60px;">
+          <button class="btn btn-sm" onclick="">1</button>
+          <button class="btn btn-sm">5</button>
+          <button class="btn btn-sm">10</button>
+          <button class="btn btn-sm">25</button>
+        </div>
+
+        <div class="nudge-grid">
+          <div class="axis-label">X</div>
+          <button class="nudge-btn">−</button>
+          <button class="nudge-btn">+</button>
+
+          <div class="axis-label">Y</div>
+          <button class="nudge-btn">−</button>
+          <button class="nudge-btn">+</button>
+
+          <div class="axis-label">Z</div>
+          <button class="nudge-btn">−</button>
+          <button class="nudge-btn">+</button>
+        </div>
+
+        <div class="delta-readout">ΔX: 0.0   ΔY: 0.0   ΔZ: 0.0 mm</div>
+      </div>
+
+      <!-- Rotate -->
+      <div class="group" style="flex:1;">
+        <div class="group-title">Rotate</div>
+
+        <div class="row">
+          <label>Axis:</label>
+          <label><input type="radio" name="axis" checked> X</label>
+          <label><input type="radio" name="axis"> Y</label>
+          <label><input type="radio" name="axis"> Z</label>
+        </div>
+
+        <div class="row">
+          <label>Angle °:</label>
+          <input type="number" value="90" style="width:60px;">
+          <button class="btn btn-sm">45</button>
+          <button class="btn btn-sm">90</button>
+          <button class="btn btn-sm">180</button>
+        </div>
+
+        <div class="row">
+          <button class="btn btn-sm" style="width:100%">Pick pivot point…</button>
+        </div>
+        <div class="pivot-readout unset">Pivot: not set</div>
+
+        <div style="margin-top:6px;">
+          <button class="btn btn-primary" style="width:100%; height:26px;">Apply rotation</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="display:flex; gap:6px; margin-top:4px;">
+      <button class="btn" style="flex:1;">Bind selection</button>
+      <button class="btn" style="flex:1;">Free</button>
+      <button class="btn" style="flex:1;">Reset to origin</button>
+      <button class="btn" style="flex:1;">Undo</button>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       TAB 2 — BOLT CLEARANCE
+  ═══════════════════════════════════════════════ -->
+  <div class="tab-panel active" id="tab-bolts">
+
+    <!-- Scope -->
+    <div class="group">
+      <div class="group-title">Scope</div>
+      <div class="row">
+        <label><input type="radio" name="bscope" checked> Current selection</label>
+        <label><input type="radio" name="bscope"> All assemblies in model</label>
+      </div>
+    </div>
+
+    <!-- Check parameters -->
+    <div class="group">
+      <div class="group-title">Clearance thresholds</div>
+
+      <div class="row">
+        <label style="width:190px;">Min wrench clearance (mm):</label>
+        <input type="number" value="38" style="width:60px;">
+        <span class="hint">— 1½" standard; 32 mm for tight-access</span>
+      </div>
+
+      <div class="row">
+        <label style="width:190px;">Min edge distance (mm):</label>
+        <input type="number" value="32" style="width:60px;">
+        <span class="hint">— checks bolt c/l to nearest plate edge</span>
+      </div>
+
+      <div class="row">
+        <label style="width:190px;">Min bolt spacing (mm):</label>
+        <input type="number" value="70" style="width:60px;">
+        <span class="hint">— centre-to-centre in same group</span>
+      </div>
+
+      <div class="row">
+        <label><input type="checkbox" checked> Flag tightening clearance (top flange / slab obstruction)</label>
+      </div>
+    </div>
+
+    <!-- Run -->
+    <div style="display:flex; gap:6px; margin-bottom:8px; align-items:center;">
+      <button class="btn btn-primary" style="width:140px; height:28px;">Run checks</button>
+      <span class="hint">Checked 312 bolts across 47 assemblies in 1.2 s</span>
+    </div>
+
+    <!-- Results -->
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th style="width:72px;">Mark</th>
+          <th style="width:90px;">Connection</th>
+          <th style="width:62px;">Bolt</th>
+          <th style="width:80px;">Clearance (mm)</th>
+          <th style="width:72px;">Edge dist (mm)</th>
+          <th>Issue</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>B-104</td>
+          <td>W-flange end</td>
+          <td>M20</td>
+          <td class="status-fail">22</td>
+          <td class="status-pass">38</td>
+          <td class="status-fail">✕ Wrench clearance</td>
+        </tr>
+        <tr>
+          <td>B-104</td>
+          <td>W-flange end</td>
+          <td>M20</td>
+          <td class="status-fail">24</td>
+          <td class="status-pass">36</td>
+          <td class="status-fail">✕ Wrench clearance</td>
+        </tr>
+        <tr>
+          <td>C-201</td>
+          <td>Clip angle</td>
+          <td>M22</td>
+          <td class="status-pass">41</td>
+          <td class="status-fail">18</td>
+          <td class="status-fail">✕ Edge distance</td>
+        </tr>
+        <tr>
+          <td>B-217</td>
+          <td>Shear tab</td>
+          <td>M20</td>
+          <td class="status-warn">35</td>
+          <td class="status-pass">40</td>
+          <td class="status-warn">⚠ Tight — top flange</td>
+        </tr>
+        <tr>
+          <td>B-219</td>
+          <td>Shear tab</td>
+          <td>M20</td>
+          <td class="status-pass">52</td>
+          <td class="status-pass">44</td>
+          <td class="status-pass">✓ OK</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="summary-bar">
+      <div class="summary-counts">
+        <span class="count-fail">✕ 3 failures</span>
+        <span class="count-warn">⚠ 1 warning</span>
+        <span class="count-pass">✓ 43 passed</span>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <button class="btn btn-sm">Select failures in model</button>
+        <button class="btn btn-sm">Export CSV…</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       TAB 3 — ERECTION SEQUENCE (future)
+  ═══════════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-sequence">
+    <div class="placeholder">
+      Erection sequence &amp; shear tab orientation checks<br>
+      <span style="font-size:11px; margin-top:6px; display:block;">Coming soon</span>
+    </div>
+  </div>
+
+  <!-- Status strip -->
+  <div class="statusstrip">
+    <span>Model: ACME_Tower_Phase2.db1</span>
+    <span>47 assemblies in scope</span>
+  </div>
+
+</div>
+
+<script>
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(function(t, i) {
+    t.classList.remove('active');
+  });
+  document.querySelectorAll('.tab-panel').forEach(function(p) {
+    p.classList.remove('active');
+  });
+
+  var map = { mover: 0, bolts: 1, sequence: 2 };
+  document.querySelectorAll('.tab')[map[name]].classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+</script>
+
+</body>
+</html>
